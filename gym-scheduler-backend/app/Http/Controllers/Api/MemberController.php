@@ -36,33 +36,73 @@ class MemberController extends Controller
 
     public function index()
     {
-        
-        $users = DB::table('users')
-            ->where('role', '!=', 'admin')
-            ->whereNotNull('membership_package') 
+        $hasUserMembershipColumns = Schema::hasColumn('users', 'membership_package')
+            && Schema::hasColumn('users', 'membership_expiry');
+
+        if ($hasUserMembershipColumns) {
+            $users = DB::table('users')
+                ->where('role', '!=', 'admin')
+                ->whereNotNull('membership_package')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $formattedUsers = $users->map(function ($user) {
+                $expiryDate = $user->membership_expiry ? Carbon::parse($user->membership_expiry) : null;
+                $isExpired = $expiryDate ? $expiryDate->isPast() : true;
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone ?? 'Chưa cập nhật',
+                    'pack' => $user->membership_package,
+                    'end' => $expiryDate ? $expiryDate->format('d/m/Y') : '-',
+                    'status' => !$isExpired ? 'active' : 'expired',
+                    'price' => 0,
+                    'duration' => '0 tháng'
+                ];
+            });
+
+            return response()->json($formattedUsers);
+        }
+
+        if (!Schema::hasTable('members')) {
+            return response()->json([]);
+        }
+
+        $members = DB::table('members')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $formattedUsers = $users->map(function ($user) {
-            $expiryDate = $user->membership_expiry ? Carbon::parse($user->membership_expiry) : null;
-            
-            
+        // Keep only the latest package row per email in legacy members-table schema.
+        $latestMembers = $members->unique('email')->values();
+
+        $formattedMembers = $latestMembers->map(function ($member) {
+            $expiryDate = null;
+            if (!empty($member->end)) {
+                try {
+                    $expiryDate = Carbon::parse($member->end);
+                } catch (\Throwable $th) {
+                    $expiryDate = null;
+                }
+            }
+
             $isExpired = $expiryDate ? $expiryDate->isPast() : true;
 
             return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone ?? 'Chưa cập nhật',
-                'pack' => $user->membership_package, 
-                'end' => $expiryDate ? $expiryDate->format('d/m/Y') : '-', 
-                'status' => !$isExpired ? 'active' : 'expired', 
-                'price' => 0, 
-                'duration' => '0 tháng'
+                'id' => $member->id,
+                'name' => $member->name,
+                'email' => $member->email,
+                'phone' => $member->phone ?? 'Chưa cập nhật',
+                'pack' => $member->pack ?? 'Chưa đăng ký',
+                'end' => $expiryDate ? $expiryDate->format('d/m/Y') : ($member->end ?? '-'),
+                'status' => !$isExpired ? 'active' : 'expired',
+                'price' => $member->price ?? 0,
+                'duration' => $member->duration ?? '0 tháng'
             ];
         });
 
-        return response()->json($formattedUsers);
+        return response()->json($formattedMembers);
     }
 
     

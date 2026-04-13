@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 
 class HistoryController extends Controller
 {
@@ -13,11 +15,37 @@ class HistoryController extends Controller
     {
         $user = Auth::user();
 
-        
+        $hasUserMembershipColumns = Schema::hasColumn('users', 'membership_package')
+            && Schema::hasColumn('users', 'membership_expiry');
+
+        $membershipPackage = $hasUserMembershipColumns ? ($user->membership_package ?? null) : null;
+        $membershipExpiry = $hasUserMembershipColumns ? ($user->membership_expiry ?? null) : null;
+
+        if ((!$membershipPackage || !$membershipExpiry) && Schema::hasTable('members')) {
+            $latestMember = DB::table('members')
+                ->where('email', $user->email)
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($latestMember) {
+                $membershipPackage = $membershipPackage ?: ($latestMember->pack ?? null);
+                $membershipExpiry = $membershipExpiry ?: ($latestMember->end ?? null);
+            }
+        }
+
+        $expiryDate = null;
+        if (!empty($membershipExpiry)) {
+            try {
+                $expiryDate = Carbon::parse($membershipExpiry);
+            } catch (\Throwable $th) {
+                $expiryDate = null;
+            }
+        }
+
         $membership = [
-            'package' => $user->membership_package ?? 'Chưa đăng ký',
-            'expiry' => $user->membership_expiry,
-            'is_active' => $user->membership_expiry && now()->lte($user->membership_expiry)
+            'package' => $membershipPackage ?? 'Chưa đăng ký',
+            'expiry' => $expiryDate ? $expiryDate->toDateString() : $membershipExpiry,
+            'is_active' => $expiryDate ? now()->lte($expiryDate) : false
         ];
 
         

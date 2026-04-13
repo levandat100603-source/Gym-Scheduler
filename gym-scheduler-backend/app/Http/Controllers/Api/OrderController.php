@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class OrderController extends Controller
@@ -57,27 +58,57 @@ class OrderController extends Controller
                 switch ($item['type']) {
                     
                     case 'membership':
-                        
                         $months = (int) filter_var($item['schedule'], FILTER_SANITIZE_NUMBER_INT);
-                        if ($months <= 0) $months = 1; 
+                        if ($months <= 0) $months = 1;
 
-                        
-                        $currentExpiry = $user->membership_expiry ? Carbon::parse($user->membership_expiry) : null;
-                        
+                        $hasUserMembershipColumns = Schema::hasColumn('users', 'membership_package')
+                            && Schema::hasColumn('users', 'membership_expiry');
+
+                        $currentExpiry = null;
+                        if ($hasUserMembershipColumns && !empty($user->membership_expiry)) {
+                            $currentExpiry = Carbon::parse($user->membership_expiry);
+                        } elseif (Schema::hasTable('members')) {
+                            $latestMember = DB::table('members')
+                                ->where('email', $user->email)
+                                ->orderBy('created_at', 'desc')
+                                ->first();
+
+                            if ($latestMember && !empty($latestMember->end)) {
+                                try {
+                                    $currentExpiry = Carbon::parse($latestMember->end);
+                                } catch (\Throwable $th) {
+                                    $currentExpiry = null;
+                                }
+                            }
+                        }
+
                         if ($currentExpiry && $currentExpiry->isFuture()) {
-                            
                             $newExpiry = $currentExpiry->addMonths($months);
                         } else {
-                            
                             $newExpiry = Carbon::now()->addMonths($months);
                         }
 
-                        
-                        DB::table('users')->where('id', $user->id)->update([
-                            'membership_package' => $item['name'],
-                            'membership_expiry' => $newExpiry,
-                            'updated_at' => now()
-                        ]);
+                        if ($hasUserMembershipColumns) {
+                            DB::table('users')->where('id', $user->id)->update([
+                                'membership_package' => $item['name'],
+                                'membership_expiry' => $newExpiry,
+                                'updated_at' => now()
+                            ]);
+                        } elseif (Schema::hasTable('members')) {
+                            DB::table('members')->insert([
+                                'name' => $user->name,
+                                'email' => $user->email,
+                                'phone' => $user->phone ?? 'Chưa cập nhật',
+                                'pack' => $item['name'],
+                                'duration' => $item['schedule'] ?? ($months . ' tháng'),
+                                'start' => Carbon::now()->format('Y-m-d'),
+                                'end' => $newExpiry->format('Y-m-d'),
+                                'price' => $item['price'] ?? 0,
+                                'status' => 'active',
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
                         break;
 
                     case 'class':
