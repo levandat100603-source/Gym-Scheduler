@@ -325,7 +325,7 @@ class AuthController extends Controller
             ], 404);
         }
 
-        $token = Str::random(64);
+        $token = $this->generatePasswordResetCode();
 
         try {
             $passwordResetTable = $this->resolvePasswordResetTable();
@@ -345,8 +345,7 @@ class AuthController extends Controller
         }
 
         try {
-            $resetUrl = config('app.frontend_url') . '/reset-password?token=' . $token . '&email=' . urlencode($request->email);
-            $message = "Xin chào {$user->name},\n\nBạn đã yêu cầu đặt lại mật khẩu. Vui lòng sử dụng mã này để đặt lại mật khẩu của bạn:\n\nMã: {$token}\n\nMã này sẽ hết hạn sau 60 phút.\n\nNếu bạn không yêu cầu điều này, vui lòng bỏ qua email này.";
+            $message = "Xin chào {$user->name},\n\nBạn đã yêu cầu đặt lại mật khẩu. Vui lòng sử dụng mã 8 ký tự bên dưới để đặt lại mật khẩu:\n\nMã: {$token}\n\nMã này sẽ hết hạn sau 60 phút.\n\nNếu bạn không yêu cầu điều này, vui lòng bỏ qua email này.";
 
             Mail::raw($message, function ($mail) use ($request, $user) {
                 $mail->to($request->email)
@@ -391,7 +390,9 @@ class AuthController extends Controller
             ], 422);
         }
 
-        if (!Hash::check($request->token, $resetRecord->token)) {
+        $submittedToken = strtoupper(preg_replace('/\s+/', '', (string) $request->token));
+
+        if (!Hash::check($submittedToken, $resetRecord->token)) {
             return response()->json([
                 'message' => 'Mã đặt lại mật khẩu không đúng.',
             ], 422);
@@ -439,6 +440,20 @@ class AuthController extends Controller
         });
 
         return 'password_reset_tokens';
+    }
+
+    private function generatePasswordResetCode(int $length = 8): string
+    {
+        // Uppercase letters + digits to keep the code short and easy to type.
+        $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $maxIndex = strlen($characters) - 1;
+        $code = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $code .= $characters[random_int(0, $maxIndex)];
+        }
+
+        return $code;
     }
 
     private function sendVerificationEmail(string $email, string $name, string $code): void
