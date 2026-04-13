@@ -19,4 +19,4 @@ RUN composer install --no-dev --optimize-autoloader \
 
 EXPOSE 10000
 
-CMD sh -c "mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache; php artisan storage:link --force; php artisan optimize:clear; php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"
+CMD sh -c "mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache; php artisan storage:link --force; php artisan optimize:clear; php artisan migrate --force --path=database/migrations/2026_04_13_120000_add_membership_columns_to_users_table.php; php artisan migrate --force --path=database/migrations/2026_04_13_120100_backfill_membership_from_members_to_users.php; php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"
