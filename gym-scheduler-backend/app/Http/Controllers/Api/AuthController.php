@@ -8,7 +8,9 @@ use App\Models\User;
 use App\Models\EmailVerificationCode;
 use App\Models\PendingRegistration;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -170,7 +172,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'verification_code' => $code,
-            'code_expires_at' => Carbon::now()->addSeconds(60), // chỉ hiệu lực 60s
+            'code_expires_at' => Carbon::now()->addMinutes(15),
         ]);
 
         try {
@@ -235,8 +237,10 @@ class AuthController extends Controller
             ->first();
 
         if (!$pendingUser || $pendingUser->verification_code !== $request->code) {
-            // Nếu sai mã thì xóa luôn bản ghi pending
-            if ($pendingUser) $pendingUser->delete();
+            if ($pendingUser) {
+                $pendingUser->delete();
+            }
+
             return response()->json([
                 'message' => 'Mã xác thực không đúng hoặc đã hết hạn. Vui lòng đăng ký lại.',
             ], 422);
@@ -249,16 +253,31 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user = User::create([
-            'name' => $pendingUser->name,
-            'email' => $pendingUser->email,
-            'password' => $pendingUser->password,
-            'role' => 'user',
-            'email_verified' => true,
-            'email_verified_at' => Carbon::now(),
-        ]);
+        try {
+            $userData = [
+                'name' => $pendingUser->name,
+                'email' => $pendingUser->email,
+                'password' => $pendingUser->password,
+                'role' => 'user',
+                'email_verified_at' => Carbon::now(),
+            ];
 
-        // Xóa bản ghi pending sau khi tạo user thành công
+            // Legacy schemas imported from SQL may not include this column.
+            if (Schema::hasColumn('users', 'email_verified')) {
+                $userData['email_verified'] = true;
+            }
+
+            $user = User::create($userData);
+        } catch (\Throwable $e) {
+            Log::error('Verify email failed: ' . $e->getMessage(), [
+                'email' => $pendingUser->email,
+            ]);
+
+            return response()->json([
+                'message' => 'Có lỗi khi xác thực tài khoản. Vui lòng thử lại sau.',
+            ], 500);
+        }
+
         $pendingUser->delete();
 
         $token = $user->createToken('auth_token')->plainTextToken;
