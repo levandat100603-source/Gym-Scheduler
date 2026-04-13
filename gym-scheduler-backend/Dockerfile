@@ -12,8 +12,10 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY . .
 
 RUN composer install --no-dev --optimize-autoloader \
-    && php artisan package:discover --ansi
+    && php artisan package:discover --ansi \
+    && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 10000
 
-CMD sh -c "php artisan optimize:clear; php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"
+CMD sh -c "mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache; php artisan optimize:clear; php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"
