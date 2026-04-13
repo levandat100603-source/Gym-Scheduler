@@ -368,7 +368,12 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|string|email|max:255',
             'token' => 'required|string',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[A-Za-z])(?=.*\d).+$/', 'confirmed'],
+        ], [
+            'password.required' => 'Vui lòng nhập mật khẩu mới.',
+            'password.min' => 'Mật khẩu mới phải có ít nhất 8 ký tự.',
+            'password.regex' => 'Mật khẩu mới phải bao gồm cả chữ và số.',
+            'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
         ]);
 
         try {
