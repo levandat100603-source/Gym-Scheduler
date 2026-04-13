@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -308,6 +309,136 @@ class AuthController extends Controller
             'code' => $code,
             'expires_at' => Carbon::now()->addMinutes(15),
         ]);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email|max:255',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Email này không được đăng ký trong hệ thống.',
+            ], 404);
+        }
+
+        $token = Str::random(64);
+
+        try {
+            $passwordResetTable = $this->resolvePasswordResetTable();
+
+            DB::table($passwordResetTable)->updateOrInsert(
+                ['email' => $request->email],
+                [
+                    'token' => Hash::make($token),
+                    'created_at' => Carbon::now(),
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::error('Failed to store password reset token: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Không thể tạo mã đặt lại mật khẩu. Vui lòng thử lại.',
+            ], 500);
+        }
+
+        try {
+            $resetUrl = config('app.frontend_url') . '/reset-password?token=' . $token . '&email=' . urlencode($request->email);
+            $message = "Xin chào {$user->name},\n\nBạn đã yêu cầu đặt lại mật khẩu. Vui lòng sử dụng mã này để đặt lại mật khẩu của bạn:\n\nMã: {$token}\n\nMã này sẽ hết hạn sau 60 phút.\n\nNếu bạn không yêu cầu điều này, vui lòng bỏ qua email này.";
+
+            Mail::raw($message, function ($mail) use ($request, $user) {
+                $mail->to($request->email)
+                    ->subject('Đặt lại mật khẩu - FitZone Gym');
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to send password reset email: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Không thể gửi email. Vui lòng thử lại.',
+            ], 500);
+        }
+
+        return response()->json([
+            'message' => 'Nếu email này tồn tại, bạn sẽ nhận được email với hướng dẫn đặt lại mật khẩu.',
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email|max:255',
+            'token' => 'required|string',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        try {
+            $passwordResetTable = $this->resolvePasswordResetTable();
+        } catch (\Throwable $e) {
+            Log::error('Failed to resolve password reset table: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Chưa sẵn sàng đặt lại mật khẩu. Vui lòng thử lại sau.',
+            ], 500);
+        }
+
+        $resetRecord = DB::table($passwordResetTable)
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$resetRecord) {
+            return response()->json([
+                'message' => 'Mã đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.',
+            ], 422);
+        }
+
+        if (!Hash::check($request->token, $resetRecord->token)) {
+            return response()->json([
+                'message' => 'Mã đặt lại mật khẩu không đúng.',
+            ], 422);
+        }
+
+        if (Carbon::parse($resetRecord->created_at)->addMinutes(60)->isPast()) {
+            DB::table($passwordResetTable)->where('email', $request->email)->delete();
+            return response()->json([
+                'message' => 'Mã đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu lại.',
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Email này không được đăng ký.',
+            ], 404);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        DB::table($passwordResetTable)->where('email', $request->email)->delete();
+
+        return response()->json([
+            'message' => 'Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập lại.',
+        ]);
+    }
+
+    private function resolvePasswordResetTable(): string
+    {
+        if (Schema::hasTable('password_reset_tokens')) {
+            return 'password_reset_tokens';
+        }
+
+        if (Schema::hasTable('password_resets')) {
+            return 'password_resets';
+        }
+
+        Schema::create('password_reset_tokens', function ($table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+
+        return 'password_reset_tokens';
     }
 
     private function sendVerificationEmail(string $email, string $name, string $code): void
