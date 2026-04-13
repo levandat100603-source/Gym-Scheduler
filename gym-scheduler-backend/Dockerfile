@@ -3,7 +3,7 @@ FROM php:8.2-cli
 WORKDIR /var/www/html
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git unzip libzip-dev libpq-dev \
+    && apt-get install -y --no-install-recommends ca-certificates git unzip libzip-dev libpq-dev \
     && docker-php-ext-install pdo_mysql zip bcmath \
     && rm -rf /var/lib/apt/lists/*
 
@@ -16,4 +16,4 @@ RUN composer install --no-dev --optimize-autoloader \
 
 EXPOSE 10000
 
-CMD sh -c "php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"
+CMD sh -c "php artisan optimize:clear; php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"
