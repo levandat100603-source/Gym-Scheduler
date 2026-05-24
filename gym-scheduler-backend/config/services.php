@@ -26,11 +26,11 @@ return [
     ],
 
     'vnpay' => [
-        'tmn_code' => env('VNPAY_TMN_CODE'),
-        'hash_secret' => env('VNPAY_HASH_KEY'),
-        'url' => env('VNPAY_API_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
-        'return_url' => env('VNPAY_RETURN_URL', 'https://gym-scheduler-3kbu.onrender.com/vnpay/return'),
-        'ipn_url' => env('VNPAY_IPN_URL', 'https://gym-scheduler-3kbu.onrender.com/vnpay/ipn'),
+        'tmn_code' => trim((string) env('VNPAY_TMN_CODE')),
+        'hash_secret' => trim((string) env('VNPAY_HASH_KEY')),
+        'url' => trim((string) env('VNPAY_API_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html')),
+        'return_url' => trim((string) env('VNPAY_RETURN_URL', 'https://gym-scheduler-3kbu.onrender.com/vnpay/return')),
+        'ipn_url' => trim((string) env('VNPAY_IPN_URL', 'https://gym-scheduler-3kbu.onrender.com/vnpay/ipn')),
     ],
 
 ];
