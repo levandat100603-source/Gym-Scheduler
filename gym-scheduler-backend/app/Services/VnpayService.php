@@ -44,7 +44,7 @@ class VnpayService
             'secureHash' => $secureHash,
         ]);
 
-        return $gatewayUrl . '?' . $query . '&vnp_SecureHashType=HMACSHA512&vnp_SecureHash=' . $secureHash;
+        return $gatewayUrl . '?' . $query . '&vnp_SecureHash=' . $secureHash;
     }
 
     public function verifyCallback(array $input): bool
