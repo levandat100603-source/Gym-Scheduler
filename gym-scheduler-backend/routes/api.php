@@ -176,3 +176,32 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/debug/vnpay-config', function () {
     return response()->json(config('services.vnpay'));
 });
+
+// Temporary debug route: create a VNPay payment URL and return query + secureHash.
+// WARNING: remove this route after troubleshooting.
+Route::get('/debug/vnpay-test', function (\App\Services\VnpayService $vnpayService) {
+    // Use a non-persistent fake order id based on time to avoid DB changes
+    $orderId = (int) floor(microtime(true));
+    $amount = 10000; // 10,000 VND for test
+    $ip = request()->ip() ?: '127.0.0.1';
+
+    try {
+        $paymentUrl = $vnpayService->createPaymentUrl($orderId, $amount, $ip);
+        // parse query and secureHash for inspection
+        $parts = parse_url($paymentUrl);
+        $query = $parts['query'] ?? '';
+        parse_str($query, $params);
+        $secureHash = $params['vnp_SecureHash'] ?? null;
+
+        return response()->json([
+            'order_id' => $orderId,
+            'amount' => $amount,
+            'payment_url' => $paymentUrl,
+            'query' => $query,
+            'params' => $params,
+            'secureHash' => $secureHash,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
