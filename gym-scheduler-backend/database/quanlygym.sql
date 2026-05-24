@@ -1,16 +1,16 @@
--- phpMyAdmin SQL Dump
+-- phpMyAdmin SQL Dump for Local Development
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jan 22, 2026 at 10:30 PM
--- Server version: 9.1.0
+-- Database: gym (LOCAL)
+-- Generation Time: April 27, 2026
+-- Server version: 8.0.45
 -- PHP Version: 8.3.14
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -18,8 +18,12 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `quanlygym`
+-- Create Database for Local Development
 --
+
+DROP DATABASE IF EXISTS `gym`;
+CREATE DATABASE IF NOT EXISTS `gym` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `gym`;
 
 -- --------------------------------------------------------
 
@@ -174,16 +178,40 @@ CREATE TABLE IF NOT EXISTS `migrations` (
 --
 
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
-(1, '2026_01_22_095957_add_schedule_info_to_booking_trainers_table', 1),
-(2, '2026_01_22_100303_create_orders_and_order_items_tables', 2),
-(3, '2026_01_22_095957_add_schedule_info_to_booking_trainers_table', 1),
-(4, '2026_01_22_100303_create_orders_and_order_items_tables', 1),
-(5, '2026_01_22_101432_add_schedule_to_booking_classes_table', 3),
-(6, '2026_01_22_101900_update_booking_classes_unique', 4),
-(7, '2026_01_22_104444_add_email_phone_to_trainers_table', 5),
-(8, '2026_01_22_104921_create_notifications_table', 6),
-(10, '2026_01_22_000001_create_pending_registrations_table', 7),
-(11, '2026_01_23_000002_add_avatar_to_users_table', 8);
+(1, '0001_01_01_000000_create_users_table', 1),
+(2, '0001_01_01_000001_create_cache_table', 1),
+(3, '0001_01_01_000002_create_jobs_table', 1),
+(4, '2025_11_16_124504_create_personal_access_tokens_table', 1),
+(5, '2025_11_16_125248_add_role_and_phone_to_users_table', 1),
+(6, '2025_11_16_130913_create_workout_schedules_table', 1),
+(7, '2026_01_07_211708_add_role_to_users_table', 1),
+(8, '2026_01_08_001923_create_gym_tables', 1),
+(9, '2026_01_21_000001_create_booking_classes_table', 1),
+(10, '2026_01_22_000000_add_email_verification_to_users', 1),
+(11, '2026_01_22_000001_create_pending_registrations_table', 1),
+(12, '2026_01_22_095957_add_schedule_info_to_booking_trainers_table', 1),
+(13, '2026_01_22_100303_create_orders_and_order_items_tables', 1),
+(14, '2026_01_22_101432_add_schedule_to_booking_classes_table', 1),
+(15, '2026_01_22_101900_update_booking_classes_unique', 1),
+(16, '2026_01_22_104444_add_email_phone_to_trainers_table', 1),
+(17, '2026_01_22_104921_create_notifications_table', 1),
+(18, '2026_04_13_120000_add_membership_columns_to_users_table', 1),
+(19, '2026_04_13_120100_backfill_membership_from_members_to_users', 1),
+(20, '2026_04_13_230000_create_password_reset_tokens_if_missing', 1),
+(21, '2026_04_26_000001_create_working_hours_table', 1),
+(22, '2026_04_26_000002_create_time_offs_table', 1),
+(23, '2026_04_26_000003_create_session_notes_table', 1),
+(24, '2026_04_26_000004_create_workout_plans_table', 1),
+(25, '2026_04_26_000005_create_trainer_earnings_table', 1),
+(26, '2026_04_26_000006_create_waitlist_entries_table', 1),
+(27, '2026_04_26_000007_create_membership_freezes_table', 1),
+(28, '2026_04_26_000008_create_member_cards_table', 1),
+(29, '2026_04_26_000009_create_booking_cancellations_table', 1),
+(30, '2026_04_26_000010_create_vouchers_table', 1),
+(31, '2026_04_26_000011_create_push_campaigns_table', 1),
+(32, '2026_04_26_000012_create_refund_requests_table', 1),
+(33, '2026_04_26_000013_create_transaction_reports_table', 1),
+(34, '2026_04_27_000014_create_booking_trainers_table_if_missing', 1);
 
 -- --------------------------------------------------------
 
@@ -397,68 +425,320 @@ CREATE TABLE IF NOT EXISTS `personal_access_tokens` (
 ) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `personal_access_tokens`
+-- Dumping data for table `personal_access_tokens` (Token sample - for development only)
 --
 
 INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `name`, `token`, `abilities`, `last_used_at`, `expires_at`, `created_at`, `updated_at`) VALUES
-(1, 'App\\Models\\User', 1, 'auth_token', '75419db3c93ef6d89ba49e074fd7aed865a2e82dac1a1079e791526cb962f40c', '[\"*\"]', '2026-01-22 01:40:03', NULL, '2026-01-22 01:38:43', '2026-01-22 01:40:03'),
-(2, 'App\\Models\\User', 1, 'auth_token', 'f3ab42d2d4c66fe218ad71b71b48cc718ec37f98279744986c2df17b761ad878', '[\"*\"]', '2026-01-22 02:52:44', NULL, '2026-01-22 01:41:57', '2026-01-22 02:52:44'),
-(3, 'App\\Models\\User', 8, 'auth_token', '68f9c32d1f1338bb14c9fffe8746ef097e5799fc38dac374704f8080de08b9d0', '[\"*\"]', '2026-01-22 03:23:40', NULL, '2026-01-22 02:55:38', '2026-01-22 03:23:40'),
-(4, 'App\\Models\\User', 16, 'auth_token', 'c0339aad222605a496dd6ddceae5937904fb47d555b4f1ccf5b375f0bbe82800', '[\"*\"]', '2026-01-22 03:24:53', NULL, '2026-01-22 03:24:50', '2026-01-22 03:24:53'),
-(5, 'App\\Models\\User', 3, 'auth_token', '1a4c21833294ea329b147dcf940f226cb3dfe78a0c327afc2c87316a1807fc3a', '[\"*\"]', '2026-01-22 03:30:10', NULL, '2026-01-22 03:25:22', '2026-01-22 03:30:10'),
-(6, 'App\\Models\\User', 16, 'auth_token', '308d44e9798c946916454ba46d716c6a21cbc2460b6ad870fca467bc04c2025d', '[\"*\"]', '2026-01-22 03:51:52', NULL, '2026-01-22 03:30:21', '2026-01-22 03:51:52'),
-(7, 'App\\Models\\User', 8, 'auth_token', '2caa94ea2a2fbe29c8a72a87298a8f3c067a8975868b71541241ff7b4d19b859', '[\"*\"]', '2026-01-22 04:16:16', NULL, '2026-01-22 03:52:25', '2026-01-22 04:16:16'),
-(8, 'App\\Models\\User', 1, 'auth_token', '14e929ff89d91e84f4733e153ad0e1e4f082e60d7bce7352af2b17d5ac796c63', '[\"*\"]', '2026-01-22 04:04:58', NULL, '2026-01-22 03:54:16', '2026-01-22 04:04:58'),
-(9, 'App\\Models\\User', 8, 'auth_token', '18741d41f97121a14fec5b36dd79890e4c6143737ef3af122c9af77d1fdf4dad', '[\"*\"]', '2026-01-22 04:22:49', NULL, '2026-01-22 04:15:32', '2026-01-22 04:22:49'),
-(10, 'App\\Models\\User', 8, 'auth_token', '9574040dfe8367db0d3e5363728101e3cd59c7590ee1c0f3544b54f6dcf82110', '[\"*\"]', '2026-01-22 04:16:38', NULL, '2026-01-22 04:16:36', '2026-01-22 04:16:38'),
-(11, 'App\\Models\\User', 3, 'auth_token', '1368088c2ba6feca32bd5396f13c1a105a0b0c5b3f26622d41849e4e81d02910', '[\"*\"]', '2026-01-22 04:22:04', NULL, '2026-01-22 04:17:06', '2026-01-22 04:22:04'),
-(12, 'App\\Models\\User', 8, 'auth_token', 'edbdabafd2f3d21209050a90e12a762eeac1795e74e8058898402265a60f70b1', '[\"*\"]', '2026-01-22 04:31:43', NULL, '2026-01-22 04:23:06', '2026-01-22 04:31:43'),
-(13, 'App\\Models\\User', 8, 'auth_token', '6d01d5afd88c0b31eb712ce8e00f943852c7ef1cbe986cbd31a6d961b5d3000f', '[\"*\"]', '2026-01-22 04:32:23', NULL, '2026-01-22 04:32:09', '2026-01-22 04:32:23'),
-(14, 'App\\Models\\User', 8, 'auth_token', '149610f6210c25fb445682cb3872e1c923bf35674ef38c965ff01cda34dc83c9', '[\"*\"]', '2026-01-22 04:41:16', NULL, '2026-01-22 04:37:17', '2026-01-22 04:41:16'),
-(15, 'App\\Models\\User', 8, 'auth_token', '67074930bc04586ea3a02ea40368e9d557c3c1fd71c6333a56241673b52772ad', '[\"*\"]', '2026-01-22 04:45:23', NULL, '2026-01-22 04:37:53', '2026-01-22 04:45:23'),
-(16, 'App\\Models\\User', 8, 'auth_token', 'a4364b8024e3c391ba9f08ed75c282e62d7bb0e4b131c1ea43a8d68d483e9abc', '[\"*\"]', '2026-01-22 04:46:48', NULL, '2026-01-22 04:41:30', '2026-01-22 04:46:48'),
-(17, 'App\\Models\\User', 8, 'auth_token', '8224de488084b9be472cf2e010075e9686af7bd88ff98f8943e981576910a06d', '[\"*\"]', '2026-01-22 04:51:19', NULL, '2026-01-22 04:47:13', '2026-01-22 04:51:19'),
-(18, 'App\\Models\\User', 8, 'auth_token', 'f2740678f86ded05328df5e36a2b128644ee58b8541abc1e5cc23a7dde711519', '[\"*\"]', '2026-01-22 05:03:33', NULL, '2026-01-22 04:51:19', '2026-01-22 05:03:33'),
-(19, 'App\\Models\\User', 16, 'auth_token', '96a2dadf40672dfc5c2db6952c2854dd513a96e99880df03a2e7e5dbf7492bb0', '[\"*\"]', '2026-01-22 05:01:15', NULL, '2026-01-22 04:52:41', '2026-01-22 05:01:15'),
-(20, 'App\\Models\\User', 16, 'auth_token', '49c3163a6dac0a052293a1c896fe6bb366681cf712012c3e357af3b944348de1', '[\"*\"]', '2026-01-22 05:01:31', NULL, '2026-01-22 05:01:30', '2026-01-22 05:01:31'),
-(21, 'App\\Models\\User', 8, 'auth_token', 'eb4227ca9b08f9e74a2fe08f9f4f5438e603910d4242e923e8f90237a32cf915', '[\"*\"]', '2026-01-22 05:05:19', NULL, '2026-01-22 05:01:46', '2026-01-22 05:05:19'),
-(22, 'App\\Models\\User', 8, 'auth_token', '4c8274a45e082914ea6dc791f0313bf7abf10b5ee3ebc28a865531dcf7d36173', '[\"*\"]', '2026-01-22 05:08:27', NULL, '2026-01-22 05:04:24', '2026-01-22 05:08:27'),
-(23, 'App\\Models\\User', 16, 'auth_token', '9505d66acee5d26980488c1e97f4e8ee24d4db18e196dcb38a0bb35e8c961412', '[\"*\"]', '2026-01-22 05:40:29', NULL, '2026-01-22 05:05:36', '2026-01-22 05:40:29'),
-(24, 'App\\Models\\User', 8, 'auth_token', '1ee3edd026a0ca9f838fa8bc8c31f269cb5104fedb371c6821d0e5c0f4a57794', '[\"*\"]', '2026-01-22 05:08:39', NULL, '2026-01-22 05:08:27', '2026-01-22 05:08:39'),
-(25, 'App\\Models\\User', 9, 'auth_token', 'b56014b2e1b7940cad71e1e4bce108ac7244249affe77e7bd0bbb2faaa6f414a', '[\"*\"]', '2026-01-22 05:09:03', NULL, '2026-01-22 05:08:53', '2026-01-22 05:09:03'),
-(26, 'App\\Models\\User', 8, 'auth_token', '0ad14509e192cfeeba24c10f06000726bda287849b22350784354d00d5a569be', '[\"*\"]', '2026-01-22 05:12:17', NULL, '2026-01-22 05:09:08', '2026-01-22 05:12:17'),
-(27, 'App\\Models\\User', 8, 'auth_token', '0239d0bb7953f22899ad6f633a6fbf598106f2da73d1bfe3b77173cc767e6470', '[\"*\"]', '2026-01-22 05:12:32', NULL, '2026-01-22 05:12:23', '2026-01-22 05:12:32'),
-(28, 'App\\Models\\User', 8, 'auth_token', 'f7801630cf4c758224cf50935eb1b736cf2d4f77730f14ce0b37527763e978eb', '[\"*\"]', '2026-01-22 05:31:08', NULL, '2026-01-22 05:12:55', '2026-01-22 05:31:08'),
-(29, 'App\\Models\\User', 8, 'auth_token', '242e00a18ddb617514222ae739f03f715976531828dca1002b6e9c03a94498d2', '[\"*\"]', '2026-01-22 05:36:20', NULL, '2026-01-22 05:31:07', '2026-01-22 05:36:20'),
-(30, 'App\\Models\\User', 8, 'auth_token', '6d77bca8fab352c19b2fad0dd110eeb1435684864e1a28129276489fe023ef3a', '[\"*\"]', '2026-01-22 05:38:38', NULL, '2026-01-22 05:36:20', '2026-01-22 05:38:38'),
-(31, 'App\\Models\\User', 8, 'auth_token', '52a7533bc7c7c8ace32ef2a9165bc333da85cc165411925bd17b7719da169f3a', '[\"*\"]', '2026-01-22 05:41:38', NULL, '2026-01-22 05:38:38', '2026-01-22 05:41:38'),
-(32, 'App\\Models\\User', 3, 'auth_token', '51c87ef2daee432b9143ad0adc077dcc507e11a9e0309d1ad1df01fefa1f5c72', '[\"*\"]', '2026-01-22 05:41:04', NULL, '2026-01-22 05:40:53', '2026-01-22 05:41:04'),
-(33, 'App\\Models\\User', 9, 'auth_token', 'e32c9fdeac52686b7ab5e7a040480face4bbd6ff0f1f8781dd32e3ec1bdc9bbc', '[\"*\"]', '2026-01-22 09:48:33', NULL, '2026-01-22 05:41:13', '2026-01-22 09:48:33'),
-(34, 'App\\Models\\User', 8, 'auth_token', '4c639bed1bd8a1516b84893073627d9f4b9e1610b3fd8d02fc5d69f3ccfbafc2', '[\"*\"]', '2026-01-22 09:49:09', NULL, '2026-01-22 09:47:01', '2026-01-22 09:49:09'),
-(35, 'App\\Models\\User', 1, 'auth_token', '483e63a306ce377fd3da8f46b908b7cb9fde5979a9973fab2e363af29935d63d', '[\"*\"]', '2026-01-22 09:49:44', NULL, '2026-01-22 09:48:54', '2026-01-22 09:49:44'),
-(36, 'App\\Models\\User', 17, 'auth_token', 'cfb134ca4f54d70e2b267f60d23e17bf2c927c15b07f45c8ad4348285f7bbdd5', '[\"*\"]', NULL, NULL, '2026-01-22 10:11:19', '2026-01-22 10:11:19'),
-(37, 'App\\Models\\User', 18, 'auth_token', '746f7f53ad5a0effde9bf824c756667f128d4be4eaf3e7c0d3d302dcb8ceba2f', '[\"*\"]', NULL, NULL, '2026-01-22 10:32:43', '2026-01-22 10:32:43'),
-(38, 'App\\Models\\User', 18, 'auth_token', '2063f45c02fa179e5db7c0bd2e56d597eab9787a96f256351bee571cdac0d389', '[\"*\"]', '2026-01-22 10:33:14', NULL, '2026-01-22 10:33:02', '2026-01-22 10:33:14'),
-(39, 'App\\Models\\User', 16, 'auth_token', '3d6df4ad9f134fbb92dbe07e479fe4fabbbe654c93f167c048520bc59221b143', '[\"*\"]', '2026-01-22 10:33:41', NULL, '2026-01-22 10:33:34', '2026-01-22 10:33:41'),
-(40, 'App\\Models\\User', 1, 'auth_token', '7e5754a544eae2ebad02f81b66f46fd41b773d4429293eee423d3a0c1749d1f5', '[\"*\"]', '2026-01-22 10:34:51', NULL, '2026-01-22 10:34:01', '2026-01-22 10:34:51'),
-(41, 'App\\Models\\User', 18, 'auth_token', '8d92f38809366e2a697f550c58659ff7b90c3749903db3f79677dd2dfdb81bed', '[\"*\"]', '2026-01-22 12:07:21', NULL, '2026-01-22 10:35:00', '2026-01-22 12:07:21'),
-(42, 'App\\Models\\User', 1, 'auth_token', '5b182b2fd60329202683d506d70f2e7cebe54546f62b4e42d59d2ad15fc5e93f', '[\"*\"]', '2026-01-22 12:09:28', NULL, '2026-01-22 12:07:38', '2026-01-22 12:09:28'),
-(43, 'App\\Models\\User', 8, 'auth_token', 'ac87d2e24fbaee06916b3cd8e6be1ed260c61fa407edfbb98e218fcc1602687d', '[\"*\"]', '2026-01-22 12:27:30', NULL, '2026-01-22 12:26:46', '2026-01-22 12:27:30'),
-(44, 'App\\Models\\User', 18, 'auth_token', 'b113acb8fe72c5912c77e749d904958349f7d5eaa65c0e647cbe8c26146286d6', '[\"*\"]', '2026-01-22 12:27:39', NULL, '2026-01-22 12:26:59', '2026-01-22 12:27:39'),
-(45, 'App\\Models\\User', 1, 'auth_token', 'd30c803baef6528014053e592f9eaa21d7011e9877edd59b41f9b8041853f20d', '[\"*\"]', '2026-01-22 13:03:24', NULL, '2026-01-22 12:27:48', '2026-01-22 13:03:24'),
-(46, 'App\\Models\\User', 1, 'auth_token', '10e023b3e823180c500e43534fd3ab48d827eac47fe665960488307bdae21587', '[\"*\"]', '2026-01-22 13:14:23', NULL, '2026-01-22 13:04:56', '2026-01-22 13:14:23'),
-(47, 'App\\Models\\User', 1, 'auth_token', 'd1428aad0698cf8a77e0932fdeb5aeeed74bd3e8c2089ff7b6eb55b38596d60f', '[\"*\"]', '2026-01-22 13:22:29', NULL, '2026-01-22 13:14:43', '2026-01-22 13:22:29'),
-(48, 'App\\Models\\User', 1, 'auth_token', '88005f750bf956a5fac58229343e12263d0e1d6a8638b518e73cd5b9aac956e7', '[\"*\"]', '2026-01-22 14:24:19', NULL, '2026-01-22 13:22:40', '2026-01-22 14:24:19'),
-(49, 'App\\Models\\User', 1, 'auth_token', '04090f446996ad2f31a652844e220a9a37c557482113ecc4c14c10135b3278d1', '[\"*\"]', '2026-01-22 14:54:51', NULL, '2026-01-22 14:25:14', '2026-01-22 14:54:51'),
-(50, 'App\\Models\\User', 1, 'auth_token', '8e84c5847893468e65c2b9189c104fad35814f42b36f2479b44a1325042a6211', '[\"*\"]', '2026-01-22 14:31:23', NULL, '2026-01-22 14:26:12', '2026-01-22 14:31:23'),
-(51, 'App\\Models\\User', 1, 'auth_token', '8bd1a48a7ab81f908e3d6f723db5f850a845ce0b7d206b42c855b55b4920f053', '[\"*\"]', '2026-01-22 14:53:56', NULL, '2026-01-22 14:31:23', '2026-01-22 14:53:56'),
-(52, 'App\\Models\\User', 1, 'auth_token', '2b421db43ff245ee05566d8990c8bbe0d6c70294e88b08e778ffc0e0762cd0be', '[\"*\"]', '2026-01-22 15:02:10', NULL, '2026-01-22 14:53:56', '2026-01-22 15:02:10'),
-(53, 'App\\Models\\User', 1, 'auth_token', 'd0706e293b11fcb6b0e59fe366806d825c298418201434656f8110c7e4f111d2', '[\"*\"]', '2026-01-22 15:08:25', NULL, '2026-01-22 15:02:10', '2026-01-22 15:08:25'),
-(54, 'App\\Models\\User', 1, 'auth_token', '6f6fceb3e86b1f0cd093e9c97024f97d04043678e27cc533bdf7adc0f609b466', '[\"*\"]', '2026-01-22 15:18:44', NULL, '2026-01-22 15:08:25', '2026-01-22 15:18:44'),
-(55, 'App\\Models\\User', 1, 'auth_token', 'fde142045e0b9706fbdf59da9e50330ab48aacc61518dc7a60f8e52cd1b73583', '[\"*\"]', '2026-01-22 15:21:03', NULL, '2026-01-22 15:18:44', '2026-01-22 15:21:03'),
-(56, 'App\\Models\\User', 1, 'auth_token', '9c1d56deb46968a625978e8babb5be6059cffc038ed2f5512eae5887d7ab2bc4', '[\"*\"]', '2026-01-22 15:23:09', NULL, '2026-01-22 15:21:03', '2026-01-22 15:23:09'),
-(57, 'App\\Models\\User', 1, 'auth_token', '22ebc3174071e8e4239a29c8c9ee1fcd14e6c1bc1fa4f255652c80ec11db96bb', '[\"*\"]', '2026-01-22 15:28:09', NULL, '2026-01-22 15:23:09', '2026-01-22 15:28:09'),
-(58, 'App\\Models\\User', 1, 'auth_token', 'dfb1471e4a13e80658344e184e8091bb8f940b1c5e07ead93a3feacbf99dc901', '[\"*\"]', '2026-01-22 15:29:09', NULL, '2026-01-22 15:28:09', '2026-01-22 15:29:09');
+(1, 'App\\Models\\User', 1, 'auth_token', '75419db3c93ef6d89ba49e074fd7aed865a2e82dac1a1079e791526cb962f40c', '[\"*\"]', '2026-01-22 01:40:03', NULL, '2026-01-22 01:38:43', '2026-01-22 01:40:03');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `password_reset_tokens`
+--
+
+DROP TABLE IF EXISTS `password_reset_tokens`;
+CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
+  `email` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `token` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `working_hours`
+--
+
+DROP TABLE IF EXISTS `working_hours`;
+CREATE TABLE IF NOT EXISTS `working_hours` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `trainer_id` bigint UNSIGNED NOT NULL,
+  `day_of_week` int NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `working_hours_trainer_day_unique` (`trainer_id`,`day_of_week`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `working_hours` (`id`, `trainer_id`, `day_of_week`, `start_time`, `end_time`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 16, 0, '09:00:00', '17:00:00', 1, NOW(), NOW());
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `time_offs`
+--
+
+DROP TABLE IF EXISTS `time_offs`;
+CREATE TABLE IF NOT EXISTS `time_offs` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `trainer_id` bigint UNSIGNED NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `reason` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('pending','approved','rejected','cancelled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `approved_by` bigint UNSIGNED DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `approved_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `session_notes`
+--
+
+DROP TABLE IF EXISTS `session_notes`;
+CREATE TABLE IF NOT EXISTS `session_notes` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `booking_id` bigint UNSIGNED NOT NULL,
+  `trainer_id` bigint UNSIGNED NOT NULL,
+  `member_id` bigint UNSIGNED NOT NULL,
+  `content` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `focus_areas` json DEFAULT NULL,
+  `performance` int DEFAULT NULL,
+  `next_focus` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `session_notes_booking_idx` (`booking_id`),
+  KEY `session_notes_trainer_idx` (`trainer_id`),
+  KEY `session_notes_member_idx` (`member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `workout_plans`
+--
+
+DROP TABLE IF EXISTS `workout_plans`;
+CREATE TABLE IF NOT EXISTS `workout_plans` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `trainer_id` bigint UNSIGNED NOT NULL,
+  `member_id` bigint UNSIGNED NOT NULL,
+  `title` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `content` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `duration` int DEFAULT NULL,
+  `difficulty` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `workout_plans_trainer_idx` (`trainer_id`),
+  KEY `workout_plans_member_idx` (`member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `trainer_earnings`
+--
+
+DROP TABLE IF EXISTS `trainer_earnings`;
+CREATE TABLE IF NOT EXISTS `trainer_earnings` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `trainer_id` bigint UNSIGNED NOT NULL,
+  `total_earnings` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `completed_sessions` int NOT NULL DEFAULT '0',
+  `pending_sessions` int NOT NULL DEFAULT '0',
+  `cancelled_sessions` int NOT NULL DEFAULT '0',
+  `withdrawal_balance` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `commission_rate` decimal(5,2) NOT NULL DEFAULT '20.00',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `trainer_earnings_trainer_unique` (`trainer_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `trainer_earnings` (`id`, `trainer_id`, `total_earnings`, `completed_sessions`, `pending_sessions`, `cancelled_sessions`, `withdrawal_balance`, `commission_rate`, `created_at`, `updated_at`) VALUES
+(1, 16, 0.00, 0, 0, 0, 0.00, 20.00, NOW(), NOW()),
+(2, 3, 0.00, 0, 0, 0, 0.00, 20.00, NOW(), NOW());
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `waitlist_entries`
+--
+
+DROP TABLE IF EXISTS `waitlist_entries`;
+CREATE TABLE IF NOT EXISTS `waitlist_entries` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `member_id` bigint UNSIGNED NOT NULL,
+  `item_type` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `item_id` bigint NOT NULL,
+  `position` int NOT NULL DEFAULT '1',
+  `notified_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `waitlist_entries_unique` (`member_id`,`item_type`,`item_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `membership_freezes`
+--
+
+DROP TABLE IF EXISTS `membership_freezes`;
+CREATE TABLE IF NOT EXISTS `membership_freezes` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `member_id` bigint UNSIGNED NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `reason` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('pending','approved','active','expired') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `approved_by` bigint UNSIGNED DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `member_cards`
+--
+
+DROP TABLE IF EXISTS `member_cards`;
+CREATE TABLE IF NOT EXISTS `member_cards` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `member_id` bigint UNSIGNED NOT NULL,
+  `card_number` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `qr_code` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `member_cards_member_unique` (`member_id`),
+  UNIQUE KEY `member_cards_number_unique` (`card_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `booking_cancellations`
+--
+
+DROP TABLE IF EXISTS `booking_cancellations`;
+CREATE TABLE IF NOT EXISTS `booking_cancellations` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `booking_id` bigint UNSIGNED NOT NULL,
+  `member_id` bigint UNSIGNED NOT NULL,
+  `reason` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cancelled_at` timestamp NOT NULL,
+  `penalty` decimal(10,2) DEFAULT NULL,
+  `refund_amount` decimal(10,2) DEFAULT NULL,
+  `status` enum('pending','approved','rejected','processed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `vouchers`
+--
+
+DROP TABLE IF EXISTS `vouchers`;
+CREATE TABLE IF NOT EXISTS `vouchers` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_type` enum('percentage','fixed') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_value` decimal(10,2) NOT NULL,
+  `max_uses` int DEFAULT NULL,
+  `used_count` int NOT NULL DEFAULT '0',
+  `min_order_amount` decimal(10,2) DEFAULT NULL,
+  `valid_from` date NOT NULL,
+  `valid_until` date NOT NULL,
+  `applicable_to` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `vouchers_code_unique` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `push_campaigns`
+--
+
+DROP TABLE IF EXISTS `push_campaigns`;
+CREATE TABLE IF NOT EXISTS `push_campaigns` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `title` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `target_audience` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all',
+  `send_at` timestamp NULL DEFAULT NULL,
+  `sent_at` timestamp NULL DEFAULT NULL,
+  `status` enum('draft','scheduled','sent') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'draft',
+  `recipient_count` int DEFAULT NULL,
+  `success_count` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `refund_requests`
+--
+
+DROP TABLE IF EXISTS `refund_requests`;
+CREATE TABLE IF NOT EXISTS `refund_requests` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `booking_id` bigint UNSIGNED NOT NULL,
+  `member_id` bigint UNSIGNED NOT NULL,
+  `reason` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `requested_amount` decimal(10,2) NOT NULL,
+  `approved_amount` decimal(10,2) DEFAULT NULL,
+  `status` enum('pending','approved','rejected','processed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
+  `approved_by` bigint UNSIGNED DEFAULT NULL,
+  `refund_method` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `processed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `transaction_reports`
+--
+
+DROP TABLE IF EXISTS `transaction_reports`;
+CREATE TABLE IF NOT EXISTS `transaction_reports` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `date` date NOT NULL,
+  `member_id` bigint UNSIGNED DEFAULT NULL,
+  `trainer_id` bigint UNSIGNED DEFAULT NULL,
+  `type` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `details` json DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `transaction_reports_date_type_idx` (`date`,`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -484,12 +764,12 @@ CREATE TABLE IF NOT EXISTS `trainers` (
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `trainers`
+-- Dumping data for table `trainers` (Trainer images removed for local compatibility)
 --
 
 INSERT INTO `trainers` (`id`, `name`, `email`, `phone`, `image`, `spec`, `exp`, `rating`, `availability`, `price`, `created_at`, `updated_at`) VALUES
-(2, 'Nguyễn Thị B', 'trainer2@gmail.com', NULL, 'http://192.168.1.5:8000/storage/trainers/trainer_1769108878.jpg', 'Yoga & Pilates', '6 năm', 4.8, 'Sáng, Chiều, Tối', 250000, '2026-01-22 08:38:17', '2026-01-22 08:38:17'),
-(7, 'Lê Văn A', 'trainer1@gmail.com', '', '/storage/trainers/trainer_1769120905.jpeg', 'Gym & Fitness', '7 năm', 5.0, 'Sáng, Chiều, Tối', 280000, '2026-01-22 02:42:12', NULL);
+(2, 'Nguyễn Thị B', 'trainer2@gmail.com', NULL, NULL, 'Yoga & Pilates', '6 năm', 4.8, 'Sáng, Chiều, Tối', 250000, '2026-01-22 08:38:17', '2026-01-22 08:38:17'),
+(7, 'Lê Văn A', 'trainer1@gmail.com', '', NULL, 'Gym & Fitness', '7 năm', 5.0, 'Sáng, Chiều, Tối', 280000, '2026-01-22 02:42:12', NULL);
 
 -- --------------------------------------------------------
 
@@ -523,10 +803,7 @@ INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `av
 (3, 'Nguyễn Thị B', 'trainer2@gmail.com', '2026-01-22 08:38:17', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, 'trainer', NULL, NULL, '2026-01-22 08:38:17', '2026-01-22 08:38:17'),
 (8, 'Thành viên 1', 'member1@gmail.com', '2026-01-22 08:38:17', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, 'user', NULL, NULL, '2026-01-22 08:38:17', '2026-01-22 08:38:17'),
 (9, 'Thành viên 2', 'member2@gmail.com', '2026-01-22 08:38:17', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, 'user', NULL, NULL, '2026-01-22 08:38:17', '2026-01-22 08:38:17'),
-(14, 'a', 'member10@gmail.com', NULL, '$2y$12$U3QwXJiysVJSV2RDfY334.h88dZSbg4.2CR1jxz1/JciMP2Wuhp06', NULL, 'member', NULL, NULL, '2026-01-22 01:47:36', '2026-01-22 01:50:13'),
-(15, 'abc', 'abc@gmail.com', NULL, '$2y$12$lUJTtE65DXjm/kMZ0JG6E.REfFSZVj8jzh.sTk1YU7zyw0pCN3/P2', NULL, 'member', '0123456789', NULL, '2026-01-22 02:02:36', '2026-01-22 02:21:16'),
-(16, 'Lê Văn A', 'trainer1@gmail.com', NULL, '$2y$12$H2Q1sc21ZRVrQ6N1nnyZCOeomq/1jmlIsYYzQiRtW4E4UOIJy3l2C', NULL, 'trainer', '', NULL, '2026-01-22 02:42:12', '2026-01-22 02:42:12'),
-(18, 'dat', 'levandat100603@gmail.com', NULL, '$2y$12$vTeA1vQu8FbnYc9hx2kLTuxHLZQUJMfQc5fw0ZayTQ9XCBVQMNKQ.', NULL, 'user', NULL, NULL, '2026-01-22 10:32:43', '2026-01-22 10:32:43');
+(16, 'Lê Văn A', 'trainer1@gmail.com', NULL, '$2y$12$H2Q1sc21ZRVrQ6N1nnyZCOeomq/1jmlIsYYzQiRtW4E4UOIJy3l2C', NULL, 'trainer', '', NULL, '2026-01-22 02:42:12', '2026-01-22 02:42:12');
 
 -- --------------------------------------------------------
 
@@ -547,6 +824,47 @@ CREATE TABLE IF NOT EXISTS `workout_schedules` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- ========================================================
+-- IMPORT INSTRUCTIONS FOR LOCAL DEVELOPMENT
+-- ========================================================
+--
+-- To import this file to your local MySQL database:
+--
+-- Option 1: Using MySQL Command Line
+-- ================================
+-- mysql -u root -p < quanlygym_local.sql
+--
+-- Option 2: Using phpMyAdmin
+-- =========================
+-- 1. Open phpMyAdmin (usually http://localhost/phpmyadmin)
+-- 2. Click "Import" tab
+-- 3. Select this file (quanlygym_local.sql)
+-- 4. Click "Go" to import
+--
+-- Option 3: Using Laravel Artisan
+-- ==============================
+-- After importing, update .env file:
+-- DB_CONNECTION=mysql
+-- DB_HOST=127.0.0.1
+-- DB_PORT=3306
+-- DB_DATABASE=gym
+-- DB_USERNAME=root
+-- DB_PASSWORD=
+--
+-- Then run: php artisan migrate --seed
+--
+-- ========================================================
+-- TEST ACCOUNT CREDENTIALS (Password: 123456)
+-- ========================================================
+-- Admin: admin@gmail.com
+-- Trainer 1: trainer1@gmail.com
+-- Trainer 2: trainer2@gmail.com
+-- Member 1: member1@gmail.com
+-- Member 2: member2@gmail.com
+--
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

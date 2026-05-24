@@ -77,6 +77,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'phone' => $user->phone,
                 'role' => $user->role,
+                'avatar' => $user->avatar,
             ],
         ]);
     }
@@ -143,6 +144,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role, 
+                'avatar' => $user->avatar,
             ]
         ]);
     }

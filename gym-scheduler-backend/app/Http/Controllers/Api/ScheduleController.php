@@ -15,10 +15,9 @@ class ScheduleController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $member = $user->member;
 
-        $schedules = WorkoutSchedule::with('trainer.user')
-            ->where('member_id', $member->id)
+        $schedules = WorkoutSchedule::with('trainer')
+            ->where('member_id', $user->id)
             ->orderBy('start_time')
             ->get();
 
@@ -28,10 +27,9 @@ class ScheduleController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        $member = $user->member;
 
         $data = $request->validate([
-            'trainer_id' => 'nullable|exists:trainers,id',
+            'trainer_id' => 'nullable|exists:users,id',
             'start_time' => 'required|date',
             'end_time'   => 'required|date|after:start_time',
             'title'      => 'nullable|string',
@@ -39,7 +37,7 @@ class ScheduleController extends Controller
         ]);
 
         $schedule = WorkoutSchedule::create([
-            'member_id'  => $member->id,
+            'member_id'  => $user->id,
             'trainer_id' => $data['trainer_id'] ?? null,
             'start_time' => $data['start_time'],
             'end_time'   => $data['end_time'],
@@ -54,10 +52,13 @@ class ScheduleController extends Controller
 
     public function update(Request $request, WorkoutSchedule $schedule)
     {
-        $this->authorize('update', $schedule); 
+        $user = Auth::user();
+        if ($user->role !== 'admin' && (int) $schedule->member_id !== (int) $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $data = $request->validate([
-            'trainer_id' => 'nullable|exists:trainers,id',
+            'trainer_id' => 'nullable|exists:users,id',
             'start_time' => 'sometimes|date',
             'end_time'   => 'sometimes|date|after:start_time',
             'status'     => 'sometimes|string',
@@ -73,7 +74,11 @@ class ScheduleController extends Controller
 
     public function destroy(WorkoutSchedule $schedule)
     {
-        $this->authorize('delete', $schedule);
+        $user = Auth::user();
+        if ($user->role !== 'admin' && (int) $schedule->member_id !== (int) $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $schedule->delete();
 
         event(new ScheduleUpdated($schedule));

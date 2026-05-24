@@ -11,8 +11,8 @@ return new class extends Migration
     {
         Schema::create('workout_schedules', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('member_id')->constrained()->onDelete('cascade');
-        $table->foreignId('trainer_id')->nullable()->constrained()->onDelete('set null');
+        $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
+        $table->foreignId('trainer_id')->nullable()->constrained('users')->onDelete('set null');
         $table->dateTime('start_time');
         $table->dateTime('end_time');
         $table->string('status')->default('scheduled'); 

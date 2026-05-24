@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\QueryException;
 use Carbon\Carbon;
 
 class HistoryController extends Controller
@@ -49,29 +50,43 @@ class HistoryController extends Controller
         ];
 
         
-        $classes = DB::table('booking_classes')
-            ->join('gym_classes', 'booking_classes.class_id', '=', 'gym_classes.id')
-            ->where('booking_classes.user_id', $user->id)
-            ->select(
-                'gym_classes.name as class_name',
-                'gym_classes.location',
-                'booking_classes.schedule',
-                'booking_classes.status'
-            )
-            ->orderBy('booking_classes.created_at', 'desc')
-            ->get();
+        $classes = collect();
+        if (Schema::hasTable('booking_classes') && Schema::hasTable('gym_classes')) {
+            try {
+                $classes = DB::table('booking_classes')
+                    ->join('gym_classes', 'booking_classes.class_id', '=', 'gym_classes.id')
+                    ->where('booking_classes.user_id', $user->id)
+                    ->select(
+                        'gym_classes.name as class_name',
+                        'gym_classes.location',
+                        'booking_classes.schedule',
+                        'booking_classes.status'
+                    )
+                    ->orderBy('booking_classes.created_at', 'desc')
+                    ->get();
+            } catch (QueryException $e) {
+                $classes = collect();
+            }
+        }
 
         
-        $trainers = DB::table('booking_trainers')
-            ->join('trainers', 'booking_trainers.trainer_id', '=', 'trainers.id')
-            ->where('booking_trainers.user_id', $user->id)
-            ->select(
-                'trainers.name as trainer_name',
-                'booking_trainers.schedule_info',
-                'booking_trainers.status'
-            )
-            ->orderBy('booking_trainers.created_at', 'desc')
-            ->get();
+        $trainers = collect();
+        if (Schema::hasTable('booking_trainers') && Schema::hasTable('trainers')) {
+            try {
+                $trainers = DB::table('booking_trainers')
+                    ->join('trainers', 'booking_trainers.trainer_id', '=', 'trainers.id')
+                    ->where('booking_trainers.user_id', $user->id)
+                    ->select(
+                        'trainers.name as trainer_name',
+                        'booking_trainers.schedule_info',
+                        'booking_trainers.status'
+                    )
+                    ->orderBy('booking_trainers.created_at', 'desc')
+                    ->get();
+            } catch (QueryException $e) {
+                $trainers = collect();
+            }
+        }
 
         return response()->json([
             'user_info' => [

@@ -13,12 +13,17 @@ return new class extends Migration
         }
 
         Schema::table('users', function (Blueprint $table) {
+            // Ensure phone column exists first
+            if (!Schema::hasColumn('users', 'phone')) {
+                $table->string('phone')->nullable();
+            }
+            
             if (!Schema::hasColumn('users', 'membership_package')) {
-                $table->string('membership_package')->nullable()->after('phone');
+                $table->string('membership_package')->nullable();
             }
 
             if (!Schema::hasColumn('users', 'membership_expiry')) {
-                $table->timestamp('membership_expiry')->nullable()->after('membership_package');
+                $table->timestamp('membership_expiry')->nullable();
             }
         });
     }

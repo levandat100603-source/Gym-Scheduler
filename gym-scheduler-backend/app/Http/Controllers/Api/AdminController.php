@@ -12,14 +12,42 @@ use Carbon\Carbon;
 
 class AdminController extends Controller
 {
+    private function filterColumnsForTable(string $table, array $data): array
+    {
+        $filtered = [];
+        foreach ($data as $column => $value) {
+            if (Schema::hasColumn($table, $column)) {
+                $filtered[$column] = $value;
+            }
+        }
+        return $filtered;
+    }
+
     private function parseDateFlexible($value)
     {
-        if (!$value) return null;
-        // Hỗ trợ cả dd/mm/YYYY và YYYY-mm-dd
-        if (strpos($value, '-') !== false) {
-            return Carbon::createFromFormat('Y-m-d', $value)->format('Y-m-d');
+        if (!$value) {
+            return null;
         }
-        return Carbon::createFromFormat('d/m/Y', $value)->format('Y-m-d');
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y'];
+        foreach ($formats as $format) {
+            try {
+                return Carbon::createFromFormat($format, $value)->format('Y-m-d');
+            } catch (\Exception $e) {
+                // thử định dạng tiếp theo
+            }
+        }
+
+        try {
+            return Carbon::parse($value)->format('Y-m-d');
+        } catch (\Exception $e) {
+            return null;
+        }
     }
     private function toPublicRelativePath($url)
     {
@@ -27,6 +55,19 @@ class AdminController extends Controller
         $pos = strpos($url, '/storage/');
         if ($pos === false) return null;
         return substr($url, $pos + strlen('/storage/'));
+    }
+
+    private function extractScheduleDate(string $scheduleInfo): ?Carbon
+    {
+        if (preg_match('/(\d{2}\/\d{2}\/\d{4})/', $scheduleInfo, $matches)) {
+            try {
+                return Carbon::createFromFormat('d/m/Y', $matches[1]);
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        return null;
     }
     
     public function getData()
@@ -41,6 +82,26 @@ class AdminController extends Controller
         $trainers = [];
         try {
             $trainers = DB::table('trainers')->orderBy('id', 'desc')->get()->map(function ($t) {
+                $user = null;
+                if (!empty($t->email)) {
+                    $user = DB::table('users')
+                        ->where('email', $t->email)
+                        ->where('role', 'trainer')
+                        ->first();
+                }
+                if (!$user) {
+                    $user = DB::table('users')
+                        ->where('role', 'trainer')
+                        ->where('name', $t->name)
+                        ->first();
+                }
+
+                if ($user) {
+                    $t->user_id = $user->id;
+                    $t->email = $t->email ?? $user->email;
+                    $t->phone = $t->phone ?? $user->phone ?? null;
+                }
+
                 if (!empty($t->email)) {
                     // Đảm bảo image_url tồn tại để frontend hiển thị
                     if (empty($t->image_url) && !empty($t->image)) {
@@ -48,19 +109,36 @@ class AdminController extends Controller
                     }
                     return $t;
                 }
-                $user = DB::table('users')
-                    ->where('role', 'trainer')
-                    ->where('name', $t->name)
-                    ->first();
-                if ($user) {
-                    $t->email = $user->email;
-                    $t->phone = $user->phone ?? null;
-                }
                 // Đảm bảo image_url tồn tại để frontend hiển thị
                 if (empty($t->image_url) && !empty($t->image)) {
                     $t->image_url = $t->image;
                 }
                 return $t;
+            });
+        } catch (\Exception $e) {}
+
+        $workingHoursByTrainer = [];
+        try {
+            $workingHours = DB::table('working_hours')
+                ->orderBy('trainer_id')
+                ->orderBy('day_of_week')
+                ->get();
+
+            foreach ($workingHours as $hour) {
+                $trainerId = (int) $hour->trainer_id;
+                if (!isset($workingHoursByTrainer[$trainerId])) {
+                    $workingHoursByTrainer[$trainerId] = [];
+                }
+                $workingHoursByTrainer[$trainerId][] = $hour;
+            }
+
+            $trainers = $trainers->map(function ($trainer) use ($workingHoursByTrainer) {
+                $trainerId = (int) ($trainer->user_id ?? 0);
+                if ($trainerId <= 0) {
+                    $trainerId = (int) ($trainer->id ?? 0);
+                }
+                $trainer->working_hours = $workingHoursByTrainer[$trainerId] ?? [];
+                return $trainer;
             });
         } catch (\Exception $e) {}
 
@@ -73,32 +151,67 @@ class AdminController extends Controller
         
         $members = [];
         try {
-            $members = DB::table('members')->orderBy('id', 'desc')->get()->map(function ($m) {
-                // Nếu chưa có duration, thử lấy từ gói tập (packages.duration)
-                $months = (int) filter_var($m->duration ?? '', FILTER_SANITIZE_NUMBER_INT);
-                if ($months === 0 && !empty($m->pack)) {
-                    $pkg = DB::table('packages')->where('name', $m->pack)->first();
+            $memberUsers = DB::table('users')
+                ->where('role', 'member')
+                ->orderBy('id', 'desc')
+                ->get();
+
+            $memberEmails = $memberUsers->pluck('email')->filter()->values()->all();
+            $memberRecords = [];
+            if (!empty($memberEmails)) {
+                $memberRecords = DB::table('members')
+                    ->whereIn('email', $memberEmails)
+                    ->get()
+                    ->keyBy('email');
+            }
+
+            $members = $memberUsers->map(function ($user) use ($memberRecords) {
+                $record = (!empty($user->email) && isset($memberRecords[$user->email])) ? $memberRecords[$user->email] : null;
+                $member = (object) array_merge((array) $user, $record ? (array) $record : []);
+                $member->id = $user->id;
+                $member->name = $member->name ?? $user->name;
+                $member->email = $member->email ?? $user->email;
+                $member->phone = $member->phone ?? $user->phone ?? null;
+                if (empty($member->pack) && !empty($member->membership_package)) {
+                    $member->pack = $member->membership_package;
+                }
+                if (empty($member->start) && !empty($member->created_at)) {
+                    $member->start = Carbon::parse($member->created_at)->format('Y-m-d');
+                }
+                if (empty($member->end) && !empty($member->membership_expiry)) {
+                    $member->end = Carbon::parse($member->membership_expiry)->format('Y-m-d');
+                }
+
+                $months = (int) filter_var($member->duration ?? '', FILTER_SANITIZE_NUMBER_INT);
+                if ($months === 0 && !empty($member->pack)) {
+                    $pkg = DB::table('packages')->where('name', $member->pack)->first();
                     if ($pkg && !empty($pkg->duration)) {
                         $months = (int) filter_var($pkg->duration, FILTER_SANITIZE_NUMBER_INT);
-                        $m->duration = $pkg->duration;
+                        $member->duration = $pkg->duration;
                     }
                 }
 
-                // Nếu end trống, tính từ start + duration
-                if (empty($m->end) && !empty($m->start) && $months > 0) {
-                    $m->end = Carbon::parse($m->start)->addMonths($months)->format('Y-m-d');
+                if (empty($member->end) && !empty($member->start) && $months > 0) {
+                    $member->end = Carbon::parse($member->start)->addMonths($months)->format('Y-m-d');
                 }
-                return $m;
+
+                if (empty($member->status)) {
+                    if (!empty($member->membership_expiry)) {
+                        $member->status = Carbon::parse($member->membership_expiry)->isPast() ? 'inactive' : 'active';
+                    } else {
+                        $member->status = 'active';
+                    }
+                }
+
+                return $member;
             });
         } catch (\Exception $e) {}
 
         // Danh sách user chưa là member (dùng cho chọn nhanh khi tạo member)
         $availableUsers = [];
         try {
-            $memberEmails = DB::table('members')->pluck('email')->filter()->all();
             $availableUsers = DB::table('users')
-                ->whereNotIn('email', $memberEmails)
-                ->whereIn('role', ['user', 'member'])
+                ->where('role', 'user')
                 ->orderBy('id', 'desc')
                 ->get(['id', 'name', 'email', 'phone']);
         } catch (\Exception $e) {}
@@ -108,7 +221,8 @@ class AdminController extends Controller
             'trainers' => $trainers,
             'packages' => $packages,
             'members' => $members,
-            'available_users' => $availableUsers
+            'available_users' => $availableUsers,
+            'working_hours' => $workingHoursByTrainer,
         ]);
     }
 
@@ -183,27 +297,11 @@ class AdminController extends Controller
         
         
         if ($type === 'members') {
-            
-            $userData = [
-                'name' => $request->name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-            ];
-
-            // Không cho trùng member theo email (trừ khi đang update chính record đó)
-            if ($request->email) {
-                $existingMember = DB::table('members')->where('email', $request->email)->first();
-                if ($existingMember && (!$id || $existingMember->id != $id)) {
-                    return response()->json(['message' => 'Email này đã được gắn với một thành viên khác!'], 400);
-                }
-            }
-
-            // Chuẩn bị dữ liệu bảng members
             $packageInfo = DB::table('packages')->where('name', $request->pack)->first();
             $price = $packageInfo ? $packageInfo->price : 0;
             $startDate = $this->parseDateFlexible($request->start) ?? now()->format('Y-m-d');
             $durationStr = $request->duration ?? ($packageInfo->duration ?? '0');
-            $durationMonths = is_numeric($durationStr) ? (int)$durationStr : (int) filter_var($durationStr, FILTER_SANITIZE_NUMBER_INT);
+            $durationMonths = is_numeric($durationStr) ? (int) $durationStr : (int) filter_var($durationStr, FILTER_SANITIZE_NUMBER_INT);
 
             $memberData = [
                 'name' => $request->name,
@@ -217,45 +315,60 @@ class AdminController extends Controller
                 'status' => $request->status ?? 'active',
             ];
 
-            // Nếu end chưa có, tự tính từ start + duration (tháng)
             if (!$memberData['end'] && $durationMonths > 0) {
                 $memberData['end'] = Carbon::parse($startDate)->addMonths($durationMonths)->format('Y-m-d');
             }
 
-            // Lấy hoặc tạo user tương ứng (cho phép chọn user chưa là member)
-            $existingUser = $request->email ? DB::table('users')->where('email', $request->email)->first() : null;
-            if ($existingUser) {
-                DB::table('users')->where('id', $existingUser->id)->update(array_merge([
-                    'name' => $request->name,
-                    'phone' => $request->phone,
-                    'updated_at' => now()
-                ], []));
+            $memberUser = $id ? DB::table('users')->where('id', $id)->first() : null;
+            if (!$memberUser && $request->email) {
+                $memberUser = DB::table('users')->where('email', $request->email)->first();
             }
-            
-            if ($id) {
-                
-                DB::table('members')->where('id', $id)->update(array_merge($memberData, ['updated_at' => now()]));
 
-                // Cập nhật user theo email (nếu có)
-                DB::table('users')->where('email', $request->email)->update(array_merge($userData, ['updated_at' => now()]));
+            $originalEmail = $memberUser->email ?? $request->email;
+            $memberEmail = $request->email ?? $originalEmail;
+
+            $userPayload = $this->filterColumnsForTable('users', [
+                'name' => $request->name,
+                'email' => $memberEmail,
+                'phone' => $request->phone,
+                'role' => 'member',
+                'membership_package' => $request->pack,
+                'membership_expiry' => $memberData['end'] ? Carbon::parse($memberData['end'])->format('Y-m-d H:i:s') : null,
+                'updated_at' => now(),
+            ]);
+
+            if ($memberUser) {
+                if (!empty($userPayload)) {
+                    DB::table('users')->where('id', $memberUser->id)->update($userPayload);
+                }
+            } else {
+                $userPayload = array_merge(
+                    $userPayload,
+                    $this->filterColumnsForTable('users', [
+                        'password' => bcrypt(Str::random(16)),
+                        'created_at' => now(),
+                    ])
+                );
+                if (!empty($userPayload)) {
+                    DB::table('users')->insert($userPayload);
+                }
+            }
+
+            $memberPayload = array_merge($memberData, [
+                'updated_at' => now(),
+            ]);
+
+            $existingMember = $originalEmail ? DB::table('members')->where('email', $originalEmail)->first() : null;
+            if ($existingMember) {
+                DB::table('members')->where('id', $existingMember->id)->update($memberPayload);
                 $msg = 'Cập nhật thành viên thành công';
             } else {
-                // Tạo user mới nếu chưa tồn tại
-                if (!$existingUser) {
-                    $userData['password'] = bcrypt(Str::random(16));
-                    $userData['created_at'] = now();
-                    $userData['role'] = 'member';
-                    DB::table('users')->insertGetId($userData);
-                }
-
-                // Thêm member record
-                DB::table('members')->insert(array_merge($memberData, [
+                DB::table('members')->insert(array_merge($memberPayload, [
                     'created_at' => now(),
-                    'updated_at' => now(),
                 ]));
-
                 $msg = 'Đã thêm hội viên mới thành công!';
             }
+
             return response()->json(['success' => true, 'message' => $msg]);
         }
 
@@ -400,6 +513,35 @@ class AdminController extends Controller
                 }
             }
 
+            if ($type === 'members') {
+                $memberUser = DB::table('users')->where('id', $id)->first();
+                if (!$memberUser && $request->email) {
+                    $memberUser = DB::table('users')->where('email', $request->email)->where('role', 'member')->first();
+                }
+
+                if (!$memberUser) {
+                    return response()->json(['message' => 'Không tìm thấy bản ghi để xóa'], 404);
+                }
+
+                try {
+                    DB::table('members')->where('email', $memberUser->email)->delete();
+                } catch (\Exception $e) {}
+
+                try {
+                    $userUpdatePayload = $this->filterColumnsForTable('users', [
+                        'role' => 'user',
+                        'membership_package' => null,
+                        'membership_expiry' => null,
+                        'updated_at' => now()
+                    ]);
+                    if (!empty($userUpdatePayload)) {
+                        DB::table('users')->where('id', $memberUser->id)->update($userUpdatePayload);
+                    }
+                } catch (\Exception $e) {}
+
+                return response()->json(['success' => true]);
+            }
+
             // Xóa bản ghi chính
             $deleted = DB::table($tableMap[$type])->where('id', $id)->delete();
             if ($deleted === 0) {
@@ -421,27 +563,35 @@ class AdminController extends Controller
                 ->orderBy('id', 'desc')
                 ->get()
                 ->map(function ($t) {
-                    // Nếu cột email tồn tại và có giá trị, giữ nguyên
+                    $user = null;
                     if (!empty($t->email)) {
-                        // Đảm bảo image_url tồn tại để frontend hiển thị
-                        if (empty($t->image_url) && !empty($t->image)) {
-                            $t->image_url = $t->image;
-                        }
-                        return $t;
+                        $user = DB::table('users')
+                            ->where('email', $t->email)
+                            ->where('role', 'trainer')
+                            ->first();
                     }
-                    // Thử khớp theo name với user role trainer
-                    $user = DB::table('users')
-                        ->where('role', 'trainer')
-                        ->where('name', $t->name)
-                        ->first();
+                    if (!$user) {
+                        $user = DB::table('users')
+                            ->where('role', 'trainer')
+                            ->where('name', $t->name)
+                            ->first();
+                    }
+
                     if ($user) {
-                        $t->email = $user->email;
-                        $t->phone = $user->phone ?? null;
+                        $t->user_id = $user->id;
+                        $t->email = $t->email ?? $user->email;
+                        $t->phone = $t->phone ?? $user->phone ?? null;
                     }
-                    // Đảm bảo image_url tồn tại để frontend hiển thị
-                    if (empty($t->image_url) && !empty($t->image)) {
-                        $t->image_url = $t->image;
+
+                    // Ưu tiên ảnh từ bảng trainers, fallback sang avatar của user trainer.
+                    if (empty($t->image_url)) {
+                        if (!empty($t->image)) {
+                            $t->image_url = $t->image;
+                        } elseif (!empty($user?->avatar)) {
+                            $t->image_url = $user->avatar;
+                        }
                     }
+
                     return $t;
                 });
             return response()->json($trainers);
@@ -458,6 +608,91 @@ class AdminController extends Controller
             return response()->json($packages);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Lỗi khi lấy dữ liệu gói tập'], 500);
+        }
+    }
+
+    public function getTrainerScheduleDetails($trainerId)
+    {
+        try {
+            $trainer = DB::table('trainers')->where('id', $trainerId)->first();
+            if (!$trainer) {
+                $trainer = DB::table('trainers')
+                    ->whereExists(function ($query) use ($trainerId) {
+                        $query->select(DB::raw(1))
+                            ->from('users')
+                            ->whereColumn('users.email', 'trainers.email')
+                            ->where('users.id', $trainerId)
+                            ->where('users.role', 'trainer');
+                    })
+                    ->first();
+            }
+            if (!$trainer) {
+                return response()->json(['message' => 'HLV không tồn tại'], 404);
+            }
+
+            $trainerUser = null;
+            if (!empty($trainer->email)) {
+                $trainerUser = DB::table('users')
+                    ->where('email', $trainer->email)
+                    ->where('role', 'trainer')
+                    ->first();
+            }
+            if (!$trainerUser) {
+                $trainerUser = DB::table('users')
+                    ->where('role', 'trainer')
+                    ->where('name', $trainer->name)
+                    ->first();
+            }
+
+            $trainerUserId = $trainerUser->id ?? null;
+            $workingHours = [];
+            if ($trainerUserId) {
+                $workingHours = DB::table('working_hours')
+                    ->where('trainer_id', $trainerUserId)
+                    ->orderBy('day_of_week')
+                    ->get();
+            }
+
+            $bookings = DB::table('booking_trainers as bt')
+                ->join('users as u', 'bt.user_id', '=', 'u.id')
+                ->where('bt.trainer_id', $trainerId)
+                ->select('bt.*', 'u.name as user_name', 'u.email as user_email', 'u.phone as user_phone')
+                ->orderBy('bt.created_at', 'desc')
+                ->get();
+
+            $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
+            $weekEnd = Carbon::now()->endOfWeek(Carbon::SUNDAY);
+            $weeklyBookings = [];
+            $otherBookings = [];
+
+            foreach ($bookings as $booking) {
+                $scheduleInfo = (string) ($booking->schedule_info ?? '');
+                $scheduleDate = $this->extractScheduleDate($scheduleInfo);
+                if ($scheduleDate) {
+                    $booking->schedule_date = $scheduleDate->format('Y-m-d');
+                }
+
+                if ($scheduleDate && $scheduleDate->betweenIncluded($weekStart, $weekEnd)) {
+                    $weeklyBookings[] = $booking;
+                } else {
+                    $otherBookings[] = $booking;
+                }
+            }
+
+            return response()->json([
+                'trainer' => [
+                    'id' => $trainer->id,
+                    'name' => $trainer->name,
+                    'email' => $trainer->email ?? $trainerUser->email ?? null,
+                    'phone' => $trainer->phone ?? $trainerUser->phone ?? null,
+                    'user_id' => $trainerUserId,
+                ],
+                'working_hours' => $workingHours,
+                'weekly_bookings' => $weeklyBookings,
+                'other_bookings' => $otherBookings,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Không thể lấy chi tiết lịch HLV', 'error' => $e->getMessage()], 500);
         }
     }
 

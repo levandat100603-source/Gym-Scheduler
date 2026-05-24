@@ -16,6 +16,7 @@ class User extends Authenticatable
         'email',
         'phone',
         'role',
+        'avatar',
         'email_verified',
         'email_verified_at',
         'password',
@@ -25,5 +26,15 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'user_id');
+    }
+
+    public function trainerBookings()
+    {
+        return $this->hasMany(Booking::class, 'trainer_id');
+    }
 }
 
