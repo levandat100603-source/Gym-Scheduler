@@ -170,3 +170,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 });
+
+// Temporary debug route to inspect VNPay config on deployed server.
+// REMOVE THIS ROUTE AFTER TESTING - it exposes configuration values.
+Route::get('/debug/vnpay-config', function () {
+    return response()->json(config('services.vnpay'));
+});
