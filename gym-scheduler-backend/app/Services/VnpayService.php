@@ -34,13 +34,10 @@ class VnpayService
             'vnp_ExpireDate' => Carbon::now('Asia/Ho_Chi_Minh')->addMinutes(15)->format('YmdHis'),
         ];
 
-        // use SHA256 and include SecureHashType for compatibility with VNPay sandbox
-        $inputData['vnp_SecureHashType'] = 'SHA256';
-
         ksort($inputData);
         $query = http_build_query($inputData, '', '&', PHP_QUERY_RFC3986);
         $hashData = urldecode($query);
-        $secureHash = hash_hmac('sha256', $hashData, $hashSecret);
+        $secureHash = hash_hmac('sha512', $hashData, $hashSecret);
 
         // Temporary debug log to help diagnose signature mismatches
         Log::debug('vnpay:generated', [
@@ -60,14 +57,11 @@ class VnpayService
             return false;
         }
 
-        $receivedHashType = $input['vnp_SecureHashType'] ?? 'SHA256';
         unset($input['vnp_SecureHash'], $input['vnp_SecureHashType']);
         ksort($input);
         $hashData = urldecode(http_build_query($input, '', '&', PHP_QUERY_RFC3986));
 
-        // choose algorithm based on declared hash type (default SHA256)
-        $algo = strtolower($receivedHashType) === 'sha512' ? 'sha512' : 'sha256';
-        $expected = hash_hmac($algo, $hashData, $hashSecret);
+        $expected = hash_hmac('sha512', $hashData, $hashSecret);
 
         // compare case-insensitively
         return hash_equals(strtoupper($expected), strtoupper($secureHash));
