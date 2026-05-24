@@ -25,7 +25,7 @@ class VnpayService
             'vnp_Amount' => (int) round($amount * 100),
             'vnp_CurrCode' => 'VND',
             'vnp_TxnRef' => (string) $orderId,
-            'vnp_OrderInfo' => 'Thanh toan don hang #' . $orderId,
+            'vnp_OrderInfo' => 'Thanh toan don hang ' . $orderId,
             'vnp_OrderType' => 'other',
             'vnp_Locale' => 'vn',
             'vnp_ReturnUrl' => $returnUrl,
