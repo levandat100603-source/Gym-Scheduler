@@ -34,9 +34,8 @@ class VnpayService
             'vnp_ExpireDate' => Carbon::now('Asia/Ho_Chi_Minh')->addMinutes(15)->format('YmdHis'),
         ];
 
-        ksort($inputData);
-        $query = http_build_query($inputData, '', '&', PHP_QUERY_RFC3986);
-        $hashData = urldecode($query);
+        $query = $this->buildQueryString($inputData, false);
+        $hashData = $this->buildQueryString($inputData, true);
         $secureHash = hash_hmac('sha512', $hashData, $hashSecret);
 
         // Temporary debug log to help diagnose signature mismatches
@@ -58,12 +57,25 @@ class VnpayService
         }
 
         unset($input['vnp_SecureHash'], $input['vnp_SecureHashType']);
-        ksort($input);
-        $hashData = urldecode(http_build_query($input, '', '&', PHP_QUERY_RFC3986));
+        $hashData = $this->buildQueryString($input, true);
 
         $expected = hash_hmac('sha512', $hashData, $hashSecret);
 
         // compare case-insensitively
         return hash_equals(strtoupper($expected), strtoupper($secureHash));
+    }
+
+    private function buildQueryString(array $params, bool $forHash): string
+    {
+        ksort($params);
+
+        $pairs = [];
+        foreach ($params as $key => $value) {
+            $encodedKey = urlencode((string) $key);
+            $encodedValue = urlencode((string) $value);
+            $pairs[] = $forHash ? $encodedKey . '=' . $encodedValue : $encodedKey . '=' . $encodedValue;
+        }
+
+        return implode('&', $pairs);
     }
 }
