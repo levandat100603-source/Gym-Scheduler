@@ -10,6 +10,25 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    private function getMonthlyTarget(): float
+    {
+        if (!Schema::hasTable('dashboard_settings')) {
+            return 50000000;
+        }
+
+        $row = DB::table('dashboard_settings')->first();
+        if (!$row) {
+            DB::table('dashboard_settings')->insert([
+                'monthly_revenue_target' => 50000000,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            return 50000000;
+        }
+
+        return (float) ($row->monthly_revenue_target ?? 50000000);
+    }
+
     public function index()
     {
         $currentYear = Carbon::now()->year;
@@ -107,7 +126,7 @@ class DashboardController extends Controller
         }
 
         
-        $targetRevenue = 50000000;
+        $targetRevenue = $this->getMonthlyTarget();
         $progress = ($targetRevenue > 0) ? ($currentMonthData['revenue'] / $targetRevenue) * 100 : 0;
 
         return response()->json([
@@ -125,5 +144,37 @@ class DashboardController extends Controller
     public function reset()
     {
         return response()->json(['message' => 'Đã cập nhật dữ liệu!']);
+    }
+
+    public function updateTarget(Request $request)
+    {
+        $validated = $request->validate([
+            'monthly_revenue_target' => 'required|numeric|min:1',
+        ]);
+
+        if (!Schema::hasTable('dashboard_settings')) {
+            return response()->json(['message' => 'Bang dashboard_settings chua ton tai'], 500);
+        }
+
+        $existing = DB::table('dashboard_settings')->first();
+        if ($existing) {
+            DB::table('dashboard_settings')
+                ->where('id', $existing->id)
+                ->update([
+                    'monthly_revenue_target' => $validated['monthly_revenue_target'],
+                    'updated_at' => now(),
+                ]);
+        } else {
+            DB::table('dashboard_settings')->insert([
+                'monthly_revenue_target' => $validated['monthly_revenue_target'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Da cap nhat muc tieu thang',
+            'monthly_revenue_target' => (float) $validated['monthly_revenue_target'],
+        ]);
     }
 }

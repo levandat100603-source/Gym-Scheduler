@@ -168,6 +168,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::get('/dashboard-stats', [DashboardController::class, 'index']);
     Route::post('/dashboard-reset', [DashboardController::class, 'reset']);
+    Route::post('/dashboard-target', [DashboardController::class, 'updateTarget']);
     Route::get('/user/history', [HistoryController::class, 'index']);
     Route::put('/user/profile', [AuthController::class, 'updateProfile']);
     Route::post('/user/avatar', [AuthController::class, 'updateAvatar']);
