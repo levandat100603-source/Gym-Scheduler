@@ -75,7 +75,27 @@ class AdminController extends Controller
         
         $classes = [];
         try {
-            $classes = DB::table('gym_classes')->orderBy('id', 'desc')->get();
+            $rows = DB::table('gym_classes')->orderBy('id', 'desc')->get();
+            $today = Carbon::now()->startOfDay();
+            $classes = $rows->filter(function ($r) use ($today) {
+                $days = trim((string) ($r->days ?? ''));
+                if ($days === '') return true;
+                $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'd.m.Y'];
+                foreach ($formats as $fmt) {
+                    try {
+                        $d = Carbon::createFromFormat($fmt, $days);
+                        return !$d->startOfDay()->lt($today);
+                    } catch (\Exception $e) {
+                    }
+                }
+                if (preg_match('/\d{4}-\d{2}-\d{2}/', $days, $m)) {
+                    try {
+                        $d = Carbon::parse($m[0]);
+                        return !$d->startOfDay()->lt($today);
+                    } catch (\Exception $e) {}
+                }
+                return true;
+            })->values();
         } catch (\Exception $e) {}
 
         

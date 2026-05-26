@@ -108,7 +108,228 @@ class OrderController extends Controller
         $title = $result['success'] ? 'Thanh toán thành công' : 'Thanh toán thất bại';
         $message = $result['message'] ?? $title;
 
-        $html = '<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . e($title) . '</title><style>body{font-family:Arial,sans-serif;background:#f6f7f8;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh}.card{background:#fff;border-radius:16px;padding:24px;max-width:420px;width:calc(100% - 32px);box-shadow:0 12px 30px rgba(0,0,0,.08);text-align:center}h1{font-size:20px;margin:0 0 12px}p{margin:0;color:#444;line-height:1.5}</style></head><body><div class="card"><h1>' . e($title) . '</h1><p>' . e($message) . '</p></div></body></html>';
+        $orderId = (string) ($result['order_id'] ?? ($request->query('vnp_TxnRef') ?? ''));
+        $status = $result['success'] ? 'success' : 'failed';
+        $appUrl = 'fitzone://vnpay-return?' . http_build_query([
+            'status' => $status,
+            'order_id' => $orderId,
+            'message' => $message,
+        ], '', '&', PHP_QUERY_RFC3986);
+        $appUrlJs = json_encode($appUrl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $fallbackUrlJs = json_encode(config('app.url'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        $cardColor = $result['success'] ? '#12b76a' : '#f04438';
+        $accent = $result['success'] ? '#d1fadf' : '#fee4e2';
+        $icon = $result['success'] ? '✓' : '!';
+
+        $html = <<<HTML
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f172a">
+    <title>{$title}</title>
+    <style>
+        :root {
+            --bg1: #0f172a;
+            --bg2: #111827;
+            --card: rgba(255,255,255,0.96);
+            --text: #0f172a;
+            --muted: #475467;
+            --primary: {$cardColor};
+            --accent: {$accent};
+            --shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(56, 189, 248, 0.26), transparent 34%),
+                radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.18), transparent 28%),
+                linear-gradient(135deg, var(--bg1), var(--bg2));
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            color: var(--text);
+        }
+        .shell {
+            width: min(100%, 520px);
+            position: relative;
+        }
+        .card {
+            background: var(--card);
+            border-radius: 28px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.4);
+            overflow: hidden;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+        .icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            font-size: 36px;
+            color: #fff;
+            background: var(--primary);
+            margin-bottom: 16px;
+            box-shadow: 0 14px 30px color-mix(in srgb, var(--primary) 30%, transparent);
+        }
+        h1 {
+            margin: 0;
+            font-size: clamp(28px, 4vw, 38px);
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+        }
+        .message {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.65;
+        }
+        .meta {
+            margin-top: 22px;
+            display: grid;
+            gap: 10px;
+            padding: 16px;
+            border-radius: 20px;
+            background: rgba(15, 23, 42, 0.04);
+        }
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            font-size: 14px;
+        }
+        .meta-row span:first-child {
+            color: #667085;
+        }
+        .meta-row strong {
+            text-align: right;
+            color: var(--text);
+        }
+        .actions {
+            display: grid;
+            gap: 12px;
+            margin-top: 22px;
+        }
+        .button {
+            appearance: none;
+            border: 0;
+            border-radius: 16px;
+            padding: 15px 18px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .button:hover { transform: translateY(-1px); }
+        .button.primary {
+            background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 80%, #000));
+            color: #fff;
+            box-shadow: 0 16px 30px color-mix(in srgb, var(--primary) 28%, transparent);
+        }
+        .button.secondary {
+            background: #fff;
+            color: var(--text);
+            border: 1px solid rgba(15, 23, 42, 0.1);
+        }
+        .countdown {
+            text-align: center;
+            color: #98a2b3;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        .footer {
+            text-align: center;
+            color: rgba(255,255,255,0.72);
+            margin-top: 16px;
+            font-size: 12px;
+        }
+        @media (max-width: 420px) {
+            .card { padding: 22px; border-radius: 24px; }
+            .meta-row { flex-direction: column; gap: 4px; }
+            .meta-row strong { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <div class="card">
+            <div class="badge">VNPay · Kết quả giao dịch</div>
+            <div class="icon">{$icon}</div>
+            <h1>{$title}</h1>
+            <div class="message">{$message}</div>
+
+            <div class="meta">
+                <div class="meta-row"><span>Mã đơn hàng</span><strong>{$orderId}</strong></div>
+                <div class="meta-row"><span>Trạng thái</span><strong>{$status}</strong></div>
+            </div>
+
+            <div class="actions">
+                <a id="openAppButton" class="button primary" href="{$appUrl}">Quay lại app</a>
+                <a class="button secondary" href="{$fallbackUrlJs}" target="_blank" rel="noopener">Về trang chủ</a>
+            </div>
+
+            <div class="countdown">Tự động quay lại app sau <span id="countdown">10</span> giây</div>
+        </div>
+        <div class="footer">Nếu app không tự mở, hãy bấm nút Quay lại app ở trên.</div>
+    </div>
+
+    <script>
+        const appUrl = {$appUrlJs};
+        const fallbackUrl = {$fallbackUrlJs};
+        const countdownEl = document.getElementById('countdown');
+
+        function openApp() {
+            window.location.href = appUrl;
+            setTimeout(() => {
+                if (document.hidden === false) {
+                    window.location.href = fallbackUrl;
+                }
+            }, 1800);
+        }
+
+        document.getElementById('openAppButton').addEventListener('click', (event) => {
+            event.preventDefault();
+            openApp();
+        });
+
+        let seconds = 10;
+        const timer = setInterval(() => {
+            seconds -= 1;
+            countdownEl.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(timer);
+                openApp();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
+HTML;
 
         return response($html, 200)->header('Content-Type', 'text/html; charset=UTF-8');
     }
