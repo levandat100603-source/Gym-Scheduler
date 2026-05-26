@@ -36,6 +36,11 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
+        // Per-user cart endpoints
+        Route::get('/cart', [\App\Http\Controllers\Api\CartController::class, 'show']);
+        Route::post('/cart', [\App\Http\Controllers\Api\CartController::class, 'store']);
+        Route::delete('/cart', [\App\Http\Controllers\Api\CartController::class, 'destroy']);
+
     Route::get('/gym-classes', [GymClassController::class, 'index']);
     Route::get('/gym-classes/{id}', [GymClassController::class, 'show']);
     
