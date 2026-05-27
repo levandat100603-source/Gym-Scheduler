@@ -67,6 +67,25 @@ class BookingController extends Controller
         return response()->json($bookings);
     }
 
+    public function getRejectedBookings(Request $request)
+    {
+        $user = Auth::user();
+        $trainer = $this->findTrainerForUser($user);
+        if (!$trainer) {
+            return response()->json(['message' => 'Bạn không phải huấn luyện viên'], 403);
+        }
+
+        $bookings = DB::table('booking_trainers as bt')
+            ->join('users as u', 'bt.user_id', '=', 'u.id')
+            ->where('bt.trainer_id', $trainer->id)
+            ->where('bt.status', 'rejected')
+            ->select('bt.*', 'u.name as user_name', 'u.email as user_email', 'u.phone as user_phone')
+            ->orderBy('bt.created_at', 'desc')
+            ->get();
+
+        return response()->json($bookings);
+    }
+
     
     public function getTrainerSchedule(Request $request)
     {

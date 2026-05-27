@@ -20,45 +20,55 @@ class CleanupGymClasses extends Command
      *
      * @var string
      */
-    protected $description = 'Delete past single-date gym classes (recurring classes are preserved).';
+    protected $description = 'Delete past or legacy date-based gym classes so only today and future classes remain.';
+
+    private function parseClassDate(?string $value): ?Carbon
+    {
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return null;
+        }
+
+        $formats = ['Y-m-d', 'd/m/Y', 'd-m-Y', 'd.m.Y'];
+        foreach ($formats as $format) {
+            try {
+                return Carbon::createFromFormat($format, $raw)->startOfDay();
+            } catch (\Throwable $e) {
+            }
+        }
+
+        if (preg_match('/(\d{4}-\d{2}-\d{2})/', $raw, $match)) {
+            try {
+                return Carbon::parse($match[1])->startOfDay();
+            } catch (\Throwable $e) {
+            }
+        }
+
+        return null;
+    }
 
     public function handle()
     {
         $today = Carbon::now()->startOfDay();
-        $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'd.m.Y'];
 
         $rows = DB::table('gym_classes')->get();
         $toDelete = [];
 
         foreach ($rows as $r) {
-            $days = trim((string) ($r->days ?? ''));
-            if ($days === '') continue;
-
-            $foundDate = null;
-            foreach ($formats as $fmt) {
-                try {
-                    $d = Carbon::createFromFormat($fmt, $days);
-                    $foundDate = $d->startOfDay();
-                    break;
-                } catch (\Exception $e) {
-                }
+            $classDate = $this->parseClassDate($r->days ?? null);
+            if (!$classDate) {
+                // Legacy weekday-based rows are removed during the migration to date-only classes.
+                $toDelete[] = $r->id;
+                continue;
             }
 
-            if (!$foundDate) {
-                if (preg_match('/(\d{4}-\d{2}-\d{2})/', $days, $m)) {
-                    try {
-                        $foundDate = Carbon::parse($m[1])->startOfDay();
-                    } catch (\Exception $e) {}
-                }
-            }
-
-            if ($foundDate && $foundDate->lt($today)) {
+            if ($classDate->lt($today)) {
                 $toDelete[] = $r->id;
             }
         }
 
         if (count($toDelete) === 0) {
-            $this->info('No past single-date classes found.');
+            $this->info('No past or legacy classes found.');
             return 0;
         }
 

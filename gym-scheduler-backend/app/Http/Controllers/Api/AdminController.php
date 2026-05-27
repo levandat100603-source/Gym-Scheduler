@@ -34,7 +34,7 @@ class AdminController extends Controller
             return null;
         }
 
-        $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y'];
+        $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'd.m.Y'];
         foreach ($formats as $format) {
             try {
                 return Carbon::createFromFormat($format, $value)->format('Y-m-d');
@@ -43,8 +43,26 @@ class AdminController extends Controller
             }
         }
 
+        if (preg_match('/(\d{4}-\d{2}-\d{2})/', $value, $matches)) {
+            try {
+                return Carbon::parse($matches[1])->format('Y-m-d');
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function parseClassDate(?string $value): ?Carbon
+    {
+        $normalized = $this->parseDateFlexible($value);
+        if (!$normalized) {
+            return null;
+        }
+
         try {
-            return Carbon::parse($value)->format('Y-m-d');
+            return Carbon::parse($normalized)->startOfDay();
         } catch (\Exception $e) {
             return null;
         }
@@ -78,23 +96,12 @@ class AdminController extends Controller
             $rows = DB::table('gym_classes')->orderBy('id', 'desc')->get();
             $today = Carbon::now()->startOfDay();
             $classes = $rows->filter(function ($r) use ($today) {
-                $days = trim((string) ($r->days ?? ''));
-                if ($days === '') return true;
-                $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'd.m.Y'];
-                foreach ($formats as $fmt) {
-                    try {
-                        $d = Carbon::createFromFormat($fmt, $days);
-                        return !$d->startOfDay()->lt($today);
-                    } catch (\Exception $e) {
-                    }
+                $classDate = $this->parseClassDate($r->days ?? null);
+                if (!$classDate) {
+                    return false;
                 }
-                if (preg_match('/\d{4}-\d{2}-\d{2}/', $days, $m)) {
-                    try {
-                        $d = Carbon::parse($m[0]);
-                        return !$d->startOfDay()->lt($today);
-                    } catch (\Exception $e) {}
-                }
-                return true;
+
+                return !$classDate->lt($today);
             })->values();
         } catch (\Exception $e) {}
 

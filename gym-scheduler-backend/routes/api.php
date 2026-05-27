@@ -158,6 +158,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::middleware('can:manage-trainer-bookings')->group(function () {
         Route::get('/bookings/pending', [BookingController::class, 'getPendingBookings']);
+        Route::get('/bookings/rejected', [BookingController::class, 'getRejectedBookings']);
         Route::get('/bookings/trainer-schedule', [BookingController::class, 'getTrainerSchedule']);
         Route::post('/bookings/confirm', [BookingController::class, 'confirmBooking']);
     });
