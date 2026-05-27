@@ -38,6 +38,9 @@ class DashboardController extends Controller
         $hasOrderItems = Schema::hasTable('order_items');
         $hasMembers = Schema::hasTable('members');
         $hasPackages = Schema::hasTable('packages');
+        $hasGymClasses = Schema::hasTable('gym_classes');
+        $hasBookingClasses = Schema::hasTable('booking_classes');
+        $hasBookingTrainers = Schema::hasTable('booking_trainers');
 
         $packagePrices = [];
         if ($hasPackages) {
@@ -113,16 +116,20 @@ class DashboardController extends Controller
 
         
         if ($hasMembers) {
-            $totalMembers = DB::table('members')
-                ->when(Schema::hasColumn('members', 'end'), function ($query) {
-                    return $query->whereDate('end', '>=', Carbon::now());
-                })
-                ->when(Schema::hasColumn('members', 'status'), function ($query) {
-                    return $query->where('status', 'active');
-                })
-                ->count();
+            $totalMembers = DB::table('members')->count();
         } else {
-            $totalMembers = 0;
+            $totalMembers = DB::table('users')
+                ->whereIn('role', ['member', 'user'])
+                ->count();
+        }
+
+        $totalClasses = $hasGymClasses ? DB::table('gym_classes')->count() : 0;
+        $totalBookings = 0;
+        if ($hasBookingClasses) {
+            $totalBookings += DB::table('booking_classes')->count();
+        }
+        if ($hasBookingTrainers) {
+            $totalBookings += DB::table('booking_trainers')->count();
         }
 
         
@@ -137,6 +144,9 @@ class DashboardController extends Controller
                 'target' => $targetRevenue,
                 'progress' => min($progress, 100)
             ],
+            'total_members' => $totalMembers,
+            'total_bookings' => $totalBookings,
+            'total_classes' => $totalClasses,
             'monthly_stats' => $monthlyStats
         ]);
     }
