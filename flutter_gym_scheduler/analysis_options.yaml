@@ -1,0 +1,5 @@
+include:
+  - package:flutter_lints/flutter.yaml
+
+# Keep only stable defaults from flutter_lints for now.
+# You can add custom rules gradually after app is running.
